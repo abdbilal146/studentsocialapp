@@ -3,13 +3,13 @@ import { Card } from "@/components/ui/card";
 import { Fab, FabIcon } from "@/components/ui/fab";
 import { FormControl, FormControlLabel, FormControlLabelText } from "@/components/ui/form-control";
 import { HStack } from "@/components/ui/hstack";
-import { EditIcon, FavouriteIcon } from "@/components/ui/icon";
+import { EditIcon, FavouriteIcon, MessageCircleIcon } from "@/components/ui/icon";
 import { Textarea, TextareaInput } from "@/components/ui/textarea";
 import { VStack } from "@/components/ui/vstack";
 import { useModal } from "@/contexts/ModalContext";
 import { auth, db } from "@/firebaseConfig";
-import { addDoc, collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { useState } from "react";
+import { addDoc, arrayRemove, arrayUnion, collection, doc, getDoc, getDocs, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, View } from "react-native";
 
 const { width, height } = Dimensions.get("window")
@@ -17,6 +17,7 @@ const { width, height } = Dimensions.get("window")
 
 export default function Index() {
     const { openModal, setModalContent } = useModal()
+    const [posts, setPosts] = useState<any[]>()
 
     const showModalF = () => {
         setModalContent(
@@ -26,9 +27,53 @@ export default function Index() {
         console.log("Hello")
     }
 
+    useEffect(() => {
+        const postRef = collection(db, "posts")
+
+        const unsubscribe = onSnapshot(postRef, (snapshot) => {
+            const postsData: any[] = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }))
+            setPosts(postsData)
+            console.log(postsData)
+        })
+
+        return () => unsubscribe()
+
+    }, [])
+
+    const addToFavorite = async (postId: any, likes: any[]) => {
+        const posRef = doc(db, "posts", postId)
+        const uid = auth.currentUser?.uid
+        if (!uid) return
+
+        try {
+            if (likes.includes(uid)) {
+                await updateDoc(posRef, {
+                    likes: arrayRemove(uid)
+                })
+            } else {
+                await updateDoc(posRef, {
+                    likes: arrayUnion(uid)
+                })
+            }
+
+        } catch (e) {
+            console.log(e)
+        }
+    }
+
     return (
-        <View style={{ flex: 1 }}>
-            <PostCard></PostCard>
+        <View style={styles.body}>
+
+            <View style={styles.postsContainerStyle}>
+                {posts?.map(post => {
+                    let likes = post.likes || []
+                    return <PostCard press={() => { addToFavorite(post.id, likes) }} key={post.id} content={post.content} likesCount={likes.length}></PostCard>
+                })}
+            </View>
+
             <Fab style={styles.fabBtnStyle} placement="bottom right" isHovered={false} isDisabled={false} isPressed={false} onPress={showModalF}>
                 <FabIcon as={EditIcon} />
             </Fab>
@@ -51,6 +96,7 @@ function ModalBody() {
 
             await setDoc(newPostRef, {
                 uid: auth.currentUser?.uid!,
+                likes: [],
                 createdAt: serverTimestamp(),
                 content: textareaValue
             })
@@ -83,16 +129,20 @@ function ModalBody() {
 
 
 
-function PostCard() {
+function PostCard(props: any) {
     return (
         <Card style={styles.postCardStyle} variant="outline">
             <VStack style={styles.cardContainer}>
                 <View style={styles.postCardTextContainer}>
-                    <Text>Hello</Text>
+                    <Text style={styles.postCardContentTextStyle}>{props.content}</Text>
                 </View>
                 <HStack style={styles.postCardActionsContainer}>
                     <Button variant="outline">
+                        <ButtonIcon as={MessageCircleIcon}></ButtonIcon>
+                    </Button>
+                    <Button onPress={props.press} variant="outline">
                         <ButtonIcon as={FavouriteIcon}></ButtonIcon>
+                        <ButtonText style={styles.favouriteNumberTextStyle}>{props.likesCount}</ButtonText>
                     </Button>
                 </HStack>
             </VStack>
@@ -102,6 +152,15 @@ function PostCard() {
 
 
 const styles = StyleSheet.create({
+    body: {
+        flex: 1,
+        backgroundColor: "#021018", // Deep rich blue/black
+    },
+
+    postsContainerStyle: {
+        marginTop: height * 0.1,
+        paddingHorizontal: 16,
+    },
     modalContainerStyle: {
         width: "100%",
         display: "flex",
@@ -118,6 +177,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         marginRight: 15,
         marginBottom: 15,
+        backgroundColor: "#3F72AF",
     },
     textAreaStyle: {
         width: "90%"
@@ -125,23 +185,52 @@ const styles = StyleSheet.create({
 
     // Post Card 
     postCardStyle: {
-        margin: 12,
+        marginVertical: 8,
+        backgroundColor: "#112D4E",
+        borderRadius: 16,
+        borderWidth: 0,
+        padding: 16,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+
+    postCardContentTextStyle: {
+        color: "#F9F7F7",
+        fontFamily: "sans-serif",
+        fontSize: 16,
+        lineHeight: 24,
     },
 
     cardContainer: {
         display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
+        flexDirection: "column",
         gap: 12
     },
 
     postCardActionsContainer: {
         display: "flex",
+        flexDirection: "row",
         justifyContent: "flex-end",
-        width: "90%",
+        alignItems: "center",
+        width: "100%",
+        gap: 16,
+        borderTopWidth: 1,
+        borderTopColor: "rgba(255,255,255,0.1)",
+        paddingTop: 12,
+        marginTop: 12,
     },
     postCardTextContainer: {
-        width: "90%",
-        backgroundColor: "black"
+        width: "100%",
+    },
+    favouriteNumberTextStyle: {
+        color: "#DBE2EF",
+        fontWeight: "600",
+        marginLeft: 4,
     }
 })

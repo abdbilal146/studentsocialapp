@@ -8,6 +8,7 @@ import { SettingsIcon } from "@/components/ui/icon";
 import { Input, InputField } from "@/components/ui/input";
 import { Pressable } from "@/components/ui/pressable";
 import { Switch } from "@/components/ui/switch";
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import { VStack } from "@/components/ui/vstack";
 import { useActionSheet } from "@/contexts/ActionSheetContext";
@@ -16,9 +17,9 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 
 import { Dimensions, StyleSheet, Text, View } from "react-native";
-import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut, updateEmail, updatePassword, User } from "firebase/auth"
+import { createUserWithEmailAndPassword, deleteUser, onAuthStateChanged, signInWithEmailAndPassword, signOut, updateEmail, updatePassword, User } from "firebase/auth"
 import { auth, db } from "../../firebaseConfig"
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 const { width, height } = Dimensions.get("window");
 
@@ -51,6 +52,16 @@ export default function Account() {
     })
   }
 
+  const deleteAccount = async () => {
+    try {
+      const userRef = doc(db, "users", auth.currentUser!.uid)
+      await deleteDoc(userRef)
+      await deleteUser(auth.currentUser!)
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
 
 
   return (
@@ -72,13 +83,13 @@ export default function Account() {
                 <SettingsBody />
               )
               openDrawer()
-            }} variant="outline" size="xl">
-              <ButtonIcon as={SettingsIcon}></ButtonIcon>
+            }} variant="outline" size="xl" style={{ borderWidth: 0 }}>
+              <ButtonIcon as={SettingsIcon} color="#DBE2EF" />
             </Button>
           </Box>
           {/* Avatar */}
-          <Box style={{ marginTop: 30 }}>
-            <Avatar size="xl">
+          <Box style={{ marginTop: 20, marginBottom: 20 }}>
+            <Avatar size="2xl" style={{ borderWidth: 2, borderColor: "#3F72AF" }}>
               <AvatarFallbackText>Icon</AvatarFallbackText>
               <AvatarImage
                 source={require("../../assets/photo.jpg")}
@@ -88,11 +99,12 @@ export default function Account() {
           </Box>
 
           <Text
-            style={styles.accountText}
+            style={styles.accountEmailText}
           >
             {accountEmail}
           </Text>
-          <Box style={{ marginTop: 100 }}>
+
+          <Box style={{ marginTop: 60, width: "100%", alignItems: "center" }}>
             <VStack style={styles.vStackStyle}>
               {/* Mon Compte */}
               <Pressable onPress={() => {
@@ -105,11 +117,17 @@ export default function Account() {
                   }} />
                 )
               }} style={styles.pressableStyle}>
-                <Text style={styles.accountText}>
-                  Mon Compte
-                </Text>
-                <Ionicons name="pencil" color={"white"} size={24}></Ionicons>
+                <HStack style={{ alignItems: "center", gap: 15 }}>
+                  <View style={styles.iconContainer}>
+                    <Ionicons name="person" color={"#DBE2EF"} size={20}></Ionicons>
+                  </View>
+                  <Text style={styles.accountText}>
+                    Mon Compte
+                  </Text>
+                </HStack>
+                <Ionicons name="chevron-forward" color={"#DBE2EF"} size={20}></Ionicons>
               </Pressable>
+
               {/* Mes Informations personelles */}
               <Pressable
                 onPress={() => {
@@ -120,22 +138,49 @@ export default function Account() {
                 }}
                 style={styles.pressableStyle}
               >
-                <Text style={styles.accountText}>
-                  Mes Informations personelles
-                </Text>
-                <Ionicons name="pencil" color={"white"} size={24}></Ionicons>
+                <HStack style={{ alignItems: "center", gap: 15 }}>
+                  <View style={styles.iconContainer}>
+                    <Ionicons name="information-circle" color={"#DBE2EF"} size={20}></Ionicons>
+                  </View>
+                  <Text style={styles.accountText}>
+                    Mes Informations
+                  </Text>
+                </HStack>
+                <Ionicons name="chevron-forward" color={"#DBE2EF"} size={20}></Ionicons>
               </Pressable>
+
               {/* Se deconnecter */}
               <Pressable
                 onPress={() => {
                   signOutFromAccount()
                 }}
-                style={styles.pressableStyle}
+                style={[styles.pressableStyle, { marginTop: 20, backgroundColor: "rgba(220, 53, 69, 0.1)" }]}
               >
-                <Text style={styles.accountText}>
-                  Se deconnecter
-                </Text>
-                <Ionicons name="log-out" color={"white"} size={24}></Ionicons>
+                <HStack style={{ alignItems: "center", gap: 15 }}>
+                  <View style={[styles.iconContainer, { backgroundColor: "rgba(220, 53, 69, 0.2)" }]}>
+                    <Ionicons name="log-out" color={"#ff6b6b"} size={20}></Ionicons>
+                  </View>
+                  <Text style={[styles.accountText, { color: "#ff6b6b" }]}>
+                    Se deconnecter
+                  </Text>
+                </HStack>
+              </Pressable>
+
+              {/* Supprimer le compte */}
+              <Pressable
+                onPress={() => {
+                  deleteAccount()
+                }}
+                style={[styles.pressableStyle, { marginTop: 20, backgroundColor: "rgba(220, 53, 69, 0.1)" }]}
+              >
+                <HStack style={{ alignItems: "center", gap: 15 }}>
+                  <View style={[styles.iconContainer, { backgroundColor: "rgba(220, 53, 69, 0.2)" }]}>
+                    <MaterialIcons name="delete" color={"#ff6b6b"} size={20}></MaterialIcons>
+                  </View>
+                  <Text style={[styles.accountText, { color: "#ff6b6b" }]}>
+                    Supprimer le Compte
+                  </Text>
+                </HStack>
               </Pressable>
 
             </VStack>
@@ -195,23 +240,23 @@ function AccountBody({ onSubmit }: { onSubmit: () => void }) {
 
         <FormControl style={styles.formControlStyle} >
           <FormControlLabel>
-            <FormControlLabelText>{emailLabel}</FormControlLabelText>
+            <FormControlLabelText style={{ color: "#DBE2EF" }}>{emailLabel}</FormControlLabelText>
           </FormControlLabel>
-          <Input>
-            <InputField onChangeText={setAccountEmail} placeholder={emailPlaceholder} defaultValue={accountEmail!}></InputField>
+          <Input style={{ borderColor: "#3F72AF", borderRadius: 10 }}>
+            <InputField style={styles.inputFieldStyle} onChangeText={setAccountEmail} placeholder={emailPlaceholder} defaultValue={accountEmail!}></InputField>
           </Input>
         </FormControl>
 
         <FormControl style={styles.formControlStyle} >
           <FormControlLabel>
-            <FormControlLabelText>{passwordLabel}</FormControlLabelText>
+            <FormControlLabelText style={{ color: "#DBE2EF" }}>{passwordLabel}</FormControlLabelText>
           </FormControlLabel>
-          <Input>
-            <InputField onChangeText={setAccountPassword} type="password" placeholder={passwordPlaceholder} defaultValue={passwordExemple}></InputField>
+          <Input style={{ borderColor: "#3F72AF", borderRadius: 10 }}>
+            <InputField style={styles.inputFieldStyle} onChangeText={setAccountPassword} type="password" placeholder={passwordPlaceholder} defaultValue={passwordExemple}></InputField>
           </Input>
         </FormControl>
         <Button style={styles.submitButtonStyle} onPress={updateUserAccountInfo}>
-          {spinnerIsVisible ? <ButtonSpinner /> : <ButtonText>{buttonLable}</ButtonText>}
+          {spinnerIsVisible ? <ButtonSpinner color={"white"} /> : <ButtonText>{buttonLable}</ButtonText>}
         </Button>
       </VStack>
     </View>
@@ -270,30 +315,30 @@ function LoginScreen() {
           <Divider style={styles.settingsBodyHeaderDividerStyle}></Divider>
           <FormControl style={styles.formControlStyle}>
             <FormControlLabel>
-              <FormControlLabelText>{emailLabel}</FormControlLabelText>
+              <FormControlLabelText style={{ color: "#DBE2EF" }}>{emailLabel}</FormControlLabelText>
             </FormControlLabel>
-            <Input>
-              <InputField onChangeText={setEmail} value={email} type="text" placeholder={emailPlaceholder}></InputField>
+            <Input style={{ borderColor: "#3F72AF", borderRadius: 10 }}>
+              <InputField style={styles.inputFieldStyle} onChangeText={setEmail} value={email} type="text" placeholder={emailPlaceholder}></InputField>
             </Input>
           </FormControl>
 
           <FormControl style={styles.formControlStyle}>
             <FormControlLabel>
-              <FormControlLabelText>{passwordLabel}</FormControlLabelText>
+              <FormControlLabelText style={{ color: "#DBE2EF" }}>{passwordLabel}</FormControlLabelText>
             </FormControlLabel>
-            <Input>
-              <InputField onChangeText={setPassword} value={password} type="password" placeholder={passwordPlaceholder}>
+            <Input style={{ borderColor: "#3F72AF", borderRadius: 10 }}>
+              <InputField style={styles.inputFieldStyle} onChangeText={setPassword} value={password} type="password" placeholder={passwordPlaceholder}>
               </InputField>
             </Input>
           </FormControl>
           <Button onPress={handleLogin} style={styles.submitButtonStyle}>
             <ButtonText>Se Connecter</ButtonText>
-            {loader && <ButtonSpinner></ButtonSpinner>}
+            {loader && <ButtonSpinner color={"white"}></ButtonSpinner>}
           </Button>
           <Pressable onPress={() => {
             setRegisterSectionVisibility(true)
           }}>
-            <Text>{registerLabel}</Text>
+            <Text style={{ color: "#3F72AF", marginTop: 10 }}>{registerLabel}</Text>
           </Pressable>
         </View> : <RegisterScreen setRegisterVisibility={() => setRegisterSectionVisibility(false)} />
       }
@@ -349,41 +394,41 @@ function RegisterScreen({ setRegisterVisibility }: { setRegisterVisibility: () =
       <Divider style={styles.settingsBodyHeaderDividerStyle}></Divider>
       <FormControl style={styles.formControlStyle}>
         <FormControlLabel>
-          <FormControlLabelText>{emailLabel}</FormControlLabelText>
+          <FormControlLabelText style={{ color: "#DBE2EF" }}>{emailLabel}</FormControlLabelText>
         </FormControlLabel>
-        <Input>
-          <InputField onChangeText={setEmail} value={email} type="text" placeholder={emailPlaceholder}></InputField>
+        <Input style={{ borderColor: "#3F72AF", borderRadius: 10 }}>
+          <InputField style={styles.inputFieldStyle} onChangeText={setEmail} value={email} type="text" placeholder={emailPlaceholder}></InputField>
         </Input>
       </FormControl>
 
       <FormControl style={styles.formControlStyle}>
         <FormControlLabel>
-          <FormControlLabelText>{passwordLabel}</FormControlLabelText>
+          <FormControlLabelText style={{ color: "#DBE2EF" }}>{passwordLabel}</FormControlLabelText>
         </FormControlLabel>
-        <Input>
-          <InputField onChangeText={setPassword} defaultValue={password} type="password" placeholder={passwordPlaceholder}>
+        <Input style={{ borderColor: "#3F72AF", borderRadius: 10 }}>
+          <InputField style={styles.inputFieldStyle} onChangeText={setPassword} defaultValue={password} type="password" placeholder={passwordPlaceholder}>
           </InputField>
         </Input>
       </FormControl>
 
       <FormControl style={styles.formControlStyle}>
         <FormControlLabel>
-          <FormControlLabelText>{passwordConfirmLabel}</FormControlLabelText>
+          <FormControlLabelText style={{ color: "#DBE2EF" }}>{passwordConfirmLabel}</FormControlLabelText>
         </FormControlLabel>
-        <Input>
-          <InputField onChangeText={setPasswordConfirm} defaultValue={passwordConfirm} type="password" placeholder={passwordConfirmPlaceholder}>
+        <Input style={{ borderColor: "#3F72AF", borderRadius: 10 }}>
+          <InputField style={styles.inputFieldStyle} onChangeText={setPasswordConfirm} defaultValue={passwordConfirm} type="password" placeholder={passwordConfirmPlaceholder}>
           </InputField>
         </Input>
       </FormControl>
 
       <Button onPress={handleRegister} style={styles.submitButtonStyle}>
         <ButtonText>Se Connecter</ButtonText>
-        {loader && <ButtonSpinner></ButtonSpinner>}
+        {loader && <ButtonSpinner color={"white"}></ButtonSpinner>}
       </Button>
       <Pressable onPress={() => {
         setRegisterVisibility()
       }}>
-        <Text>{loginLabel}</Text>
+        <Text style={{ color: "#3F72AF", marginTop: 10 }}>{loginLabel}</Text>
       </Pressable>
     </View>
   )
@@ -393,7 +438,7 @@ function RegisterScreen({ setRegisterVisibility }: { setRegisterVisibility: () =
 
 const styles = StyleSheet.create({
   accountViewStyle: {
-    backgroundColor: "#1c2b21",
+    backgroundColor: "#112D4E", // Keeping the requested background color
     flex: 1,
     justifyContent: "flex-start",
     alignItems: "center",
@@ -403,17 +448,23 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "flex-start",
     alignItems: "center",
-    marginTop: "20%",
+    marginTop: "15%",
     width: "100%",
   },
+  accountEmailText: {
+    color: "#F9F7F7",
+    fontSize: 22,
+    fontWeight: "700",
+    marginTop: 10,
+  },
   accountText: {
-    color: "white",
-    fontSize: 20,
-    fontWeight: 600,
+    color: "#F9F7F7",
+    fontSize: 16,
+    fontWeight: "500",
   },
   settingsIconContainerStyle: {
-    marginTop: 20,
-    marginRight: 30,
+    marginTop: 10,
+    marginRight: 20,
     display: "flex",
     alignItems: "flex-end",
     justifyContent: "flex-end",
@@ -421,12 +472,23 @@ const styles = StyleSheet.create({
   },
   pressableStyle: {
     flexDirection: "row",
-    gap: 20,
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    padding: 16,
+    borderRadius: 12,
+    width: "90%",
+  },
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(63, 114, 175, 0.2)",
     alignItems: "center",
     justifyContent: "center",
   },
   vStackStyle: {
-    gap: 20,
+    gap: 12,
     width: "100%",
     alignItems: "center",
   },
@@ -438,11 +500,14 @@ const styles = StyleSheet.create({
 
   },
   formControlStyle: {
-    width: "80%",
+    width: "90%",
   },
   submitButtonStyle: {
     marginTop: 20,
-    width: "80%",
+    width: "90%",
+    backgroundColor: "#3F72AF",
+    borderRadius: 12,
+    height: 48,
   },
 
   settingsBodyHeaderContainerStyle: {
@@ -457,10 +522,10 @@ const styles = StyleSheet.create({
   settingsBodyHeaderTextStyle: {
     color: "white",
     fontSize: 20,
-    fontWeight: 600,
+    fontWeight: "600",
   },
   settingsBodyHeaderDividerStyle: {
-    backgroundColor: "white",
+    backgroundColor: "rgba(255,255,255,0.1)",
     width: "85%",
   },
   switchContainerStyle: {
@@ -473,7 +538,7 @@ const styles = StyleSheet.create({
   switchText: {
     color: "white",
     fontSize: 20,
-    fontWeight: 600,
+    fontWeight: "600",
   },
 
   //Login Style
@@ -485,16 +550,21 @@ const styles = StyleSheet.create({
     width: "100%",
     height: height,
     gap: 20,
-    backgroundColor: "#1c2b21",
+    backgroundColor: "#112D4E", // Matched to account view
   },
   loginScreenTitleContainer: {
     display: "flex",
     marginTop: height * 0.1
   },
   authScreenTitle: {
-    fontSize: 29,
-    color: "white",
-    fontWeight: 600
+    fontSize: 32,
+    color: "#F9F7F7",
+    fontWeight: "700"
+  },
+
+  // inputs field styles
+  inputFieldStyle: {
+    color: "#F9F7F7"
   }
 
 
