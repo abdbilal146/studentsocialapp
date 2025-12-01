@@ -65,21 +65,24 @@ export default function Index() {
     }
 
     return (
-        <ScrollView>
-            <View style={styles.body}>
+        <>
+            <ScrollView style={styles.body}>
+                <View style={styles.body}>
 
-                <View style={styles.postsContainerStyle}>
-                    {posts?.map(post => {
-                        let likes = post.likes || []
-                        return <PostCard press={() => { addToFavorite(post.id, likes) }} key={post.id} content={post.content} likesCount={likes.length}></PostCard>
-                    })}
+                    <View style={styles.postsContainerStyle}>
+                        {posts?.map(post => {
+                            let likes = post.likes || []
+                            return <PostCard press={() => { addToFavorite(post.id, likes) }} key={post.id} content={post.content} likesCount={likes.length}></PostCard>
+                        })}
+                    </View>
+
+
                 </View>
-
-                <Fab style={styles.fabBtnStyle} placement="bottom right" isHovered={false} isDisabled={false} isPressed={false} onPress={showModalF}>
-                    <FabIcon as={EditIcon} />
-                </Fab>
-            </View>
-        </ScrollView>
+            </ScrollView>
+            <Fab style={styles.fabBtnStyle} placement="bottom right" isHovered={false} isDisabled={false} isPressed={false} onPress={showModalF}>
+                <FabIcon as={EditIcon} />
+            </Fab>
+        </>
     )
 }
 
@@ -177,6 +180,7 @@ const styles = StyleSheet.create({
         borderRadius: 100,
         alignItems: "center",
         justifyContent: "center",
+        marginTop: height * 0.1,
         marginRight: 15,
         marginBottom: 15,
         backgroundColor: "#3F72AF",
