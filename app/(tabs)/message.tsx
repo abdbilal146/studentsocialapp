@@ -6,8 +6,7 @@ import { auth, db } from "@/firebaseConfig";
 import { listenMessages, sendMessage } from "@/utils/message";
 import { collection, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { StyleSheet, View, KeyboardAvoidingView, Platform, FlatList, Text, Dimensions, Pressable } from "react-native";
-
+import { StyleSheet, View, KeyboardAvoidingView, Platform, FlatList, Text, Dimensions, Pressable, BackHandler } from "react-native";
 
 const { height, width } = Dimensions.get("window")
 
@@ -16,10 +15,8 @@ export default function Message() {
     const [searchKeyWord, setSearchkeyWord] = useState<string>()
     const [filtredSearchList, setFiltredSearchList] = useState<any[]>()
     const [dialogScreenVisibility, setDialogScreenVisibility] = useState<boolean>(false)
-
-
-
-
+    const [chatId, setChatid] = useState<string>()
+    const [receiverId, setReceiverId] = useState<string>()
 
     useEffect(() => {
         const userRef = collection(db, "users")
@@ -30,7 +27,6 @@ export default function Message() {
                     ...doc.data()
                 }
             })
-
             setUsers(usersData)
             console.log(getUsers)
         })
@@ -41,6 +37,22 @@ export default function Message() {
         console.log("Filtered List Updated:", filtredSearchList)
     }, [filtredSearchList])
 
+    useEffect(() => {
+        const backAction = () => {
+            if (dialogScreenVisibility) {
+                setDialogScreenVisibility(false)
+                return true
+            }
+            return false
+        }
+
+        const backHandler = BackHandler.addEventListener(
+            "hardwareBackPress",
+            backAction
+        )
+
+        return () => backHandler.remove()
+    }, [dialogScreenVisibility])
 
     const onSearch = () => {
         const filtredUserData = getUsers?.filter((user) => {
@@ -50,12 +62,16 @@ export default function Message() {
     }
 
     const showDialogScreen = (data?: any) => {
+        const currentUserId = auth.currentUser?.uid
+        if (!currentUserId) return
+        const sortedIds = [currentUserId, data.id].sort().join("_")
+        setChatid(sortedIds)
+        setReceiverId(data.id)
         setDialogScreenVisibility(true)
     }
 
-
     const renderSearchItem = ({ item }: { item: any }) => (
-        <Pressable onPress={() => showDialogScreen()}>
+        <Pressable onPress={() => showDialogScreen(item)}>
             <View style={styles.renderSearchItemContainer}>
                 <Text style={{ color: 'white', fontWeight: 600 }}>{item.email}</Text>
             </View>
@@ -77,27 +93,23 @@ export default function Message() {
                     </Button>
                     {filtredSearchList && (
                         <FlatList
-
                             data={filtredSearchList}
                             keyExtractor={(item) => item.id}
                             renderItem={renderSearchItem}
                             style={{ maxHeight: 200 }}
                         />
                     )}
-                </View> : <DialogScreen></DialogScreen>
+                </View> : <DialogScreen chatId={chatId!} receiverId={receiverId!}></DialogScreen>
             }
-
         </View>
     )
 }
 
-
-
-function DialogScreen() {
+function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: string }) {
     const [text, setText] = useState("")
     const [messages, setMessages] = useState<any[]>([])
-    const chatId = "general"
 
+    const currentUserId = auth.currentUser?.uid
 
 
     useEffect(() => {
@@ -179,9 +191,10 @@ const styles = StyleSheet.create({
         display: "flex",
         gap: 12
     },
-
     content: {
         flex: 1,
+        marginTop: height * 0.1,
+        margin: 15
     },
     inputContainer: {
         display: "flex",
