@@ -21,6 +21,7 @@ import { createUserWithEmailAndPassword, deleteUser, onAuthStateChanged, signInW
 import { auth, db } from "../../firebaseConfig"
 import { collection, deleteDoc, doc, serverTimestamp, setDoc } from "firebase/firestore";
 
+
 const { width, height } = Dimensions.get("window");
 
 export default function Account() {
@@ -196,7 +197,6 @@ export default function Account() {
 function PersonaInfoBody() {
   return (
     <View>
-
     </View>
   )
 }

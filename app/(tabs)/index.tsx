@@ -10,7 +10,7 @@ import { useModal } from "@/contexts/ModalContext";
 import { auth, db } from "@/firebaseConfig";
 import { addDoc, arrayRemove, arrayUnion, collection, doc, getDoc, getDocs, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { Dimensions, StyleSheet, Text, View } from "react-native";
+import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
 
 const { width, height } = Dimensions.get("window")
 
@@ -65,19 +65,21 @@ export default function Index() {
     }
 
     return (
-        <View style={styles.body}>
+        <ScrollView>
+            <View style={styles.body}>
 
-            <View style={styles.postsContainerStyle}>
-                {posts?.map(post => {
-                    let likes = post.likes || []
-                    return <PostCard press={() => { addToFavorite(post.id, likes) }} key={post.id} content={post.content} likesCount={likes.length}></PostCard>
-                })}
+                <View style={styles.postsContainerStyle}>
+                    {posts?.map(post => {
+                        let likes = post.likes || []
+                        return <PostCard press={() => { addToFavorite(post.id, likes) }} key={post.id} content={post.content} likesCount={likes.length}></PostCard>
+                    })}
+                </View>
+
+                <Fab style={styles.fabBtnStyle} placement="bottom right" isHovered={false} isDisabled={false} isPressed={false} onPress={showModalF}>
+                    <FabIcon as={EditIcon} />
+                </Fab>
             </View>
-
-            <Fab style={styles.fabBtnStyle} placement="bottom right" isHovered={false} isDisabled={false} isPressed={false} onPress={showModalF}>
-                <FabIcon as={EditIcon} />
-            </Fab>
-        </View>
+        </ScrollView>
     )
 }
 
