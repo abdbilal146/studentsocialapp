@@ -19,7 +19,7 @@ import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, View } from "react-native";
 import { createUserWithEmailAndPassword, deleteUser, onAuthStateChanged, signInWithEmailAndPassword, signOut, updateEmail, updatePassword, User } from "firebase/auth"
 import { auth, db } from "../../firebaseConfig"
-import { collection, deleteDoc, doc, DocumentData, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, DocumentData, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 
 
 const { width, height } = Dimensions.get("window");
@@ -33,6 +33,7 @@ export default function Account() {
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<DocumentData>()
   const [accountEmail, setAccountEmail] = useState<string | null>("")
+
 
 
 
@@ -59,6 +60,8 @@ export default function Account() {
     const unsub = onSnapshot(userRef, (snapshot) => {
       if (snapshot.exists()) {
         setUserData(snapshot.data())
+
+
         console.log(userData)
       }
 
@@ -126,7 +129,7 @@ export default function Account() {
                 <AvatarFallbackText>Icon</AvatarFallbackText>
                 <AvatarImage
                   source={{
-                    uri: userData!.profilePictureUrl
+                    uri: userData?.profilePictureUrl
                   }}
                 ></AvatarImage>
                 <AvatarBadge />
@@ -230,8 +233,64 @@ export default function Account() {
 
 
 function PersonaInfoBody() {
+  const nameLabel: string = "Prénom"
+  const namePlaceholder: string = "Entrer votre prénom"
+  const familyNameLabel: string = "Nom de Famille"
+  const familyNamePlaceholder: string = "Entrer votre prénom"
+  const buttonLabel: string = "Modifier"
+  const { closeActionSheet } = useActionSheet()
+
+  const [name, setName] = useState<string>()
+  const [familyName, setFamilyName] = useState<string>()
+  const [spinnerIsVisible, setSpinnerIsVisible] = useState<boolean>(false)
+
+
+
+  const updateUserInfo = async () => {
+    setSpinnerIsVisible(true)
+    const usersCollection = collection(db, "users")
+    const currentUserId = auth.currentUser?.uid
+    const userRef = doc(usersCollection, currentUserId)
+
+    await updateDoc(userRef, {
+      name: name,
+      familyName: familyName
+    }).finally(() => {
+      closeActionSheet()
+    })
+
+
+  }
+
   return (
     <View>
+      <View style={styles.actionbSheetBodyContainerStyle}>
+        <VStack style={styles.vStackStyle}>
+
+          <FormControl style={styles.formControlStyle} >
+            <FormControlLabel>
+              <FormControlLabelText style={{ color: Colors.lightBlue }}>{nameLabel}</FormControlLabelText>
+            </FormControlLabel>
+            <Input style={{ borderColor: Colors.primary, borderRadius: 10 }}>
+              <InputField style={styles.inputFieldStyle} onChangeText={setName} placeholder={namePlaceholder} defaultValue={name}></InputField>
+            </Input>
+          </FormControl>
+
+          <FormControl style={styles.formControlStyle} >
+            <FormControlLabel>
+              <FormControlLabelText style={{ color: Colors.lightBlue }}>{familyNameLabel}</FormControlLabelText>
+            </FormControlLabel>
+            <Input style={{ borderColor: Colors.primary, borderRadius: 10 }}>
+              <InputField style={styles.inputFieldStyle} onChangeText={setFamilyName} placeholder={familyNamePlaceholder} defaultValue={familyName}></InputField>
+            </Input>
+          </FormControl>
+          <Button style={styles.submitButtonStyle} onPress={async () => {
+            await updateUserInfo()
+          }}>
+            {spinnerIsVisible ? <ButtonSpinner color={Colors.white} /> : <ButtonText>{buttonLabel}</ButtonText>}
+          </Button>
+        </VStack>
+      </View>
     </View>
   )
 }

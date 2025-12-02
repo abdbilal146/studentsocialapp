@@ -12,7 +12,7 @@ import { useDrawer } from "@/contexts/DrawerContext";
 import { useModal } from "@/contexts/ModalContext";
 import { auth, db } from "@/firebaseConfig";
 import { addDoc, arrayRemove, arrayUnion, collection, doc, getDoc, getDocs, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Colors } from "@/constants/Colors";
 
@@ -75,7 +75,7 @@ export default function Index() {
                     <View style={styles.postsContainerStyle}>
                         {posts?.map(post => {
                             let likes = post.likes || []
-                            return <><PostCard press={() => { addToFavorite(post.id, likes) }} key={post.id} content={post.content} likesCount={likes.length}></PostCard><Divider style={styles.postDividerBottomStyle} key={post.id + 1}></Divider></>
+                            return <Fragment key={post.id}><PostCard press={() => { addToFavorite(post.id, likes) }} content={post.content} likesCount={likes.length}></PostCard><Divider style={styles.postDividerBottomStyle}></Divider></Fragment>
                         })}
                     </View>
 

@@ -5,7 +5,7 @@ import { ArrowRightIcon, SearchIcon, TrashIcon } from "@/components/ui/icon";
 import { Input, InputField } from "@/components/ui/input";
 import { auth, db } from "@/firebaseConfig";
 import { listenMessages, sendMessage } from "@/utils/message";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, doc, DocumentData, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { StyleSheet, View, KeyboardAvoidingView, Platform, FlatList, Text, Dimensions, Pressable, BackHandler, ScrollView } from "react-native";
 import Animated, { FadeIn, FadeOut, SlideInRight, SlideOutRight, FadeInDown, FadeInUp, Layout } from "react-native-reanimated";
@@ -98,7 +98,11 @@ export default function Message() {
 
     const onOpenChat = (chatData: any) => {
         setChatid(chatData.id)
-        setReceiverId("")
+        const chatDataSplitted: any[] = chatData.id.split('_')
+        const filtredchatDataSplitted = chatDataSplitted.filter(data => {
+            return data !== auth.currentUser?.uid
+        })
+        setReceiverId(filtredchatDataSplitted[0])
         setDialogScreenVisibility(true)
     }
 
@@ -171,9 +175,25 @@ export default function Message() {
 function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: string }) {
     const [text, setText] = useState("")
     const [messages, setMessages] = useState<any[]>([])
+    /* const [receiverPhotoProfile, setReceiverPhotoProfile] = useState<string>() */
+    const [receiverData, setReceiverData] = useState<DocumentData>()
 
-    const currentUserId = auth.currentUser?.uid
+    console.log("reciveridis", receiverId)
 
+
+
+    useEffect(() => {
+        const usersColle = collection(db, 'users')
+        const receiverRef = doc(usersColle, receiverId)
+
+        const unsub = onSnapshot(receiverRef, (snapshot) => {
+            if (snapshot.exists()) {
+                setReceiverData(snapshot.data())
+            }
+        })
+
+        return () => unsub()
+    }, [])
 
     useEffect(() => {
         const unsubscribe = listenMessages(chatId, (msgs: any) => {
@@ -199,10 +219,12 @@ function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: stri
         <Animated.View entering={SlideInRight} exiting={SlideOutRight} style={{ flex: 1 }}>
             <View style={styles.diaolgScreenHeader}>
                 <HStack style={styles.dialogScreenHeaderContentContainer}>
-                    <Text>Message</Text>
+                    <Text>{receiverData ? `${receiverData.name || ""} ${receiverData.familyName || ""}`.trim() || receiverData.email : "Chargement..."}</Text>
                     <Avatar>
                         <AvatarImage
-                            source={require("../../assets/photo.jpg")}
+                            source={{
+                                uri: receiverData?.profilePictureUrl
+                            }}
                         ></AvatarImage>
                     </Avatar>
                 </HStack>
