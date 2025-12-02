@@ -5,7 +5,7 @@ import { ArrowRightIcon, SearchIcon, TrashIcon } from "@/components/ui/icon";
 import { Input, InputField } from "@/components/ui/input";
 import { auth, db } from "@/firebaseConfig";
 import { listenMessages, sendMessage } from "@/utils/message";
-import { collection, doc, DocumentData, onSnapshot } from "firebase/firestore";
+import { collection, doc, DocumentData, getDoc, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { StyleSheet, View, KeyboardAvoidingView, Platform, FlatList, Text, Dimensions, Pressable, BackHandler, ScrollView } from "react-native";
 import Animated, { FadeIn, FadeOut, SlideInRight, SlideOutRight, FadeInDown, FadeInUp, Layout } from "react-native-reanimated";
@@ -116,15 +116,9 @@ export default function Message() {
         </Animated.View>
     );
 
-    const renderMessages = ({ item, index }: { item: any, index: number }) => (
-        <Animated.View entering={FadeInDown.delay(index * 100).springify()}>
-            <Pressable onPress={() => onOpenChat(item)}>
-                <View style={styles.renderSearchItemContainer}>
-                    <Text style={{ color: Colors.text, fontWeight: 600 }}>{item.lastMessage}</Text>
-                </View>
-            </Pressable>
-        </Animated.View>
-    )
+    const renderMessages = ({ item, index }: { item: any, index: number }) => {
+        return <MessageItem item={item} index={index} onOpenChat={onOpenChat} />
+    }
 
     return (
         <View style={styles.container}>
@@ -280,6 +274,53 @@ function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: stri
             </KeyboardAvoidingView>
         </Animated.View >
     )
+}
+
+const MessageItem = ({ item, index, onOpenChat }: { item: any, index: number, onOpenChat: (item: any) => void }) => {
+    const [receiverData, setReceiverData] = useState<DocumentData | null>(null);
+
+    useEffect(() => {
+        const chatId = item.id;
+        const chatDataSplitted: any[] = chatId.split('_');
+        const filteredChatDataSplitted = chatDataSplitted.filter(data => {
+            return data !== auth.currentUser?.uid;
+        });
+
+        if (filteredChatDataSplitted.length > 0) {
+            const usersCollection = collection(db, 'users');
+            const userRef = doc(usersCollection, filteredChatDataSplitted[0]);
+
+            const unsubscribe = onSnapshot(userRef, (snapshot) => {
+                setReceiverData(snapshot.data() || null);
+            });
+
+            return () => unsubscribe();
+        }
+    }, [item.id]);
+
+    return (
+        <Animated.View entering={FadeInDown.delay(index * 100).springify()}>
+            <Pressable onPress={() => onOpenChat(item)}>
+                <View style={styles.renderSearchItemContainer}>
+                    <HStack style={{ alignItems: 'center', gap: 10 }}>
+                        <Avatar>
+                            <AvatarImage
+                                source={{
+                                    uri: receiverData?.profilePictureUrl || 'https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'
+                                }}
+                            />
+                        </Avatar>
+                        <View>
+                            <Text style={{ color: Colors.text, fontWeight: '600', fontSize: 16 }}>
+                                {receiverData ? `${receiverData.name || ""} ${receiverData.familyName || ""}`.trim() || receiverData.email : "Chargement..."}
+                            </Text>
+                            <Text style={{ color: Colors.text, fontSize: 14 }}>{item.lastMessage}</Text>
+                        </View>
+                    </HStack>
+                </View>
+            </Pressable>
+        </Animated.View>
+    );
 }
 
 const styles = StyleSheet.create({

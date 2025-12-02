@@ -26,6 +26,8 @@ const { width, height } = Dimensions.get("window");
 import { Colors } from "@/constants/Colors";
 import { pickImage, uriToBlob } from "@/utils/image_functions";
 import { saveUrlToFirestore, uploadProfileImageToCloud } from "@/utils/cloud_storage";
+import { saveToken } from "@/notifications";
+import { Collections } from "@/constants/Collections";
 
 export default function Account() {
   const { openActionSheet, setBodyContent, closeActionSheet } = useActionSheet();
@@ -391,12 +393,14 @@ function LoginScreen() {
   const handleLogin = async () => {
     try {
       setLoader(true)
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredentials = await signInWithEmailAndPassword(auth, email, password);
+      await saveToken(Collections.users, userCredentials.user.uid)
 
     } catch (e) {
       console.log(e)
     } finally {
       setLoader(false)
+
     }
   }
 
@@ -466,7 +470,9 @@ function RegisterScreen({ setRegisterVisibility }: { setRegisterVisibility: () =
 
         const user = userCredentials.user
 
-        await setDoc(doc(db, "users", user.uid), {
+        await saveToken(Collections.users, user.uid)
+
+        await setDoc(doc(db, Collections.users, user.uid), {
           uid: user.uid,
           email: user.email,
           createdAt: serverTimestamp(),
