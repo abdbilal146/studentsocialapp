@@ -16,7 +16,7 @@ import { useDrawer } from "@/contexts/DrawerContext";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 
-import { Dimensions, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Dimensions, FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
 import { createUserWithEmailAndPassword, deleteUser, onAuthStateChanged, signInWithEmailAndPassword, signOut, updateEmail, updatePassword, User } from "firebase/auth"
 import { auth } from "../../firebaseConfig"
 import { DocumentData } from "firebase/firestore";
@@ -25,7 +25,7 @@ import { pickImage } from "@/utils/image_functions";
 import { saveUrlToFirestore, uploadProfileImageToCloud } from "@/utils/cloud_storage";
 import { saveToken } from "@/notifications";
 import { Collections } from "@/constants/Collections";
-import { createUser, deleteUserDocument, listenToUser, updateUser } from "@/db/users";
+import { createUser, deleteUserDocument, getAllFriends, listenToUser, updateUser } from "@/db/users";
 
 
 const { width, height } = Dimensions.get("window");
@@ -142,11 +142,7 @@ export default function Account() {
               <Pressable onPress={() => {
                 openActionSheet()
                 setBodyContent(
-                  <AccountBody onSubmit={() => {
-                    setTimeout(() => {
-                      closeActionSheet()
-                    }, 1000)
-                  }} />
+                  <FriendsBody />
                 )
               }} style={styles.pressableStyle}>
                 <HStack style={{ alignItems: "center", gap: 15 }}>
@@ -154,7 +150,7 @@ export default function Account() {
                     <Ionicons name="person" color={Colors.lightBlue} size={20}></Ionicons>
                   </View>
                   <Text style={styles.accountText}>
-                    Mes Amis
+                    Mes Amis ({userData?.friends.length})
                   </Text>
                 </HStack>
                 <Ionicons name="chevron-forward" color={Colors.lightBlue} size={20}></Ionicons>
@@ -479,11 +475,11 @@ function RegisterScreen({ setRegisterVisibility }: { setRegisterVisibility: () =
 
         const user = userCredentials.user
 
-        await saveToken(Collections.users, user.uid)
-
         await createUser(user.uid, user.email)
           .then(() => console.log("document is created"))
           .catch(e => console.log(e))
+
+        await saveToken(Collections.users, user.uid)
       }
     } catch (e) {
       console.log(e)
@@ -563,6 +559,55 @@ function ProfilePhotoMenu() {
     </View>
   )
 
+}
+
+function FriendsBody() {
+
+  const [userData, setUserData] = useState<any[] | null>(null)
+
+
+  useEffect(() => {
+    if (!auth.currentUser?.uid) return
+
+    getAllFriends(auth.currentUser?.uid, (data) => {
+      setUserData(data)
+    })
+
+  }, [auth.currentUser?.uid])
+
+
+  if (!userData || userData.length === 0) {
+    return (
+      <View style={{ padding: 20, alignItems: 'center' }}>
+        <Text style={{ color: Colors.text, fontSize: 16, opacity: 0.6 }}>Aucun ami trouvé.</Text>
+      </View>
+    )
+  }
+
+  return (
+    <View style={{ width: '100%', height: 400 }}>
+      <FlatList
+        data={userData}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ padding: 16, gap: 12 }}
+        renderItem={({ item }) => (
+          <Pressable style={styles.friendItemContainer}>
+            <HStack style={{ alignItems: 'center', gap: 12 }}>
+              <Avatar size="md">
+                <AvatarFallbackText>{item.name}</AvatarFallbackText>
+                <AvatarImage source={{ uri: item.profilePictureUrl }} />
+              </Avatar>
+              <VStack>
+                <Text style={styles.friendNameText}>{item.name} {item.familyName}</Text>
+                {item.email && <Text style={styles.friendEmailText}>{item.email}</Text>}
+              </VStack>
+            </HStack>
+            <Ionicons name="chevron-forward" size={20} color={Colors.lightBlue} />
+          </Pressable>
+        )}
+      />
+    </View>
+  )
 }
 
 
@@ -721,5 +766,24 @@ const styles = StyleSheet.create({
   settingsIconStyle: {
     width: 30,
     height: 30
+  },
+  friendItemContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: Colors.border,
+    padding: 12,
+    borderRadius: 12,
+    width: "100%",
+  },
+  friendNameText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  friendEmailText: {
+    color: Colors.white,
+    fontSize: 12,
+    opacity: 0.6,
   }
 })

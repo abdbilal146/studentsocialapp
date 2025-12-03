@@ -4,7 +4,7 @@ import { Divider } from "@/components/ui/divider";
 import { HStack } from "@/components/ui/hstack";
 import { Colors } from "@/constants/Colors";
 import { deletePost, listenToUserPosts, togglePostLike } from "@/db/posts";
-import { addfriend, listenToUser } from "@/db/users";
+import { addfriend, listenToUser, removeFriendFromList } from "@/db/users";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -47,6 +47,21 @@ export default function UserProfile() {
     }, [params.userId])
 
 
+    useEffect(() => {
+        if (!auth.currentUser?.uid) return;
+
+        const retrievUserData = listenToUser(auth.currentUser.uid, (data) => {
+            setCurrentUserInfo(data)
+            console.log("currentUser:", data)
+        })
+
+        return () => retrievUserData()
+
+    }, [auth.currentUser?.uid])
+
+
+
+
     const addToFavorite = async (postId: any, likes: any[]) => {
         const uid = auth.currentUser?.uid
         if (!uid) return
@@ -76,6 +91,12 @@ export default function UserProfile() {
         }
     }
 
+    const _removeFriendFromList = async () => {
+        if (auth.currentUser?.uid) {
+            await removeFriendFromList(userInfo.uid, auth.currentUser?.uid)
+        }
+    }
+
 
     return (
         <ScrollView >
@@ -101,10 +122,15 @@ export default function UserProfile() {
                 </Divider>
                 <HStack>
                     <Button onPress={async () => {
-                        addFriendToList()
+                        if (!currentUserInfo?.friends?.includes(userInfo.uid)) {
+                            await addFriendToList()
+                        }
+                        else {
+                            await _removeFriendFromList()
+                        }
                     }} style={styles.useProfileBtn}>
                         <ButtonText style={styles.useProfileBtnText}>
-                            Ajouter comme ami
+                            {currentUserInfo?.friends?.includes(userInfo.uid) ? "Ami ( Cliquer pour retirer)" : "Ajouter comme ami"}
                         </ButtonText>
                     </Button>
                 </HStack>

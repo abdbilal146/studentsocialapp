@@ -24,6 +24,26 @@ export const getAllUsers = (callback: (users: any[]) => void) => {
     });
 };
 
+export const getUsersWithIds = (userIds: any[], callback: (users: any[]) => void) => {
+
+    getAllUsers((allUsers) => {
+        if (!allUsers) return
+        const filteredUsers = allUsers.filter(user => userIds.includes(user.id));
+        callback(filteredUsers);
+    });
+};
+
+
+export const getAllFriends = (currentUserId: string, callback: (users: any[]) => void) => {
+    listenToUser(currentUserId, (data) => {
+        if (!data.friends) return
+        let friends: any[] = data.friends
+        getUsersWithIds(friends, (data) => {
+            callback(data)
+        })
+    })
+}
+
 export const createUser = async (userId: string, email: string | null) => {
     await setDoc(doc(db, Collections.users, userId), {
         uid: userId,
@@ -52,6 +72,23 @@ export const addfriend = async (userId: string, currentUserId: string) => {
     })
 }
 
+export const removeFriendFromList = async (userId: string, currentUserId: string) => {
+
+    const currentUserRef = doc(db, Collections.users, currentUserId)
+
+    await updateDoc(currentUserRef, {
+        friends: arrayRemove(userId),
+    })
+
+
+    const userRef = doc(db, Collections.users, userId);
+
+    await updateDoc(userRef, {
+        friends: arrayRemove(currentUserId),
+    })
+
+}
+
 
 
 export const removeFriendInvitation = async (currentUserId: string, senderId: string) => {
@@ -67,6 +104,16 @@ export const removeFriendInvitation = async (currentUserId: string, senderId: st
 export const acceptFriendInvitation = async (currentUserId: string, senderId: string) => {
     const userRef = doc(db, Collections.users, currentUserId)
     await updateDoc(userRef, {
-        friends: arrayUnion(senderId)
+        friends: arrayUnion(senderId),
+        acceptedfriendInvitations: arrayUnion(senderId),
+        friendRequests: arrayRemove(senderId),
+        notifications: arrayRemove("friendRequest" + "_" + senderId),
     })
+
+    const senderUserRef = doc(db, Collections.users, senderId)
+
+    await updateDoc(senderUserRef, {
+        friends: arrayUnion(currentUserId),
+    })
+
 }

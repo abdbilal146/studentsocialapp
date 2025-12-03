@@ -36,7 +36,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           tabBarIcon: homeIcon,
-          title: "Home",
+          title: "Accueil",
 
         }}
       />
@@ -44,21 +44,21 @@ export default function TabsLayout() {
         name="search"
         options={{
           tabBarIcon: searchIcon,
-          title: "Search",
+          title: "Recherche",
         }}
       />
       <Tabs.Screen
         name="myposts"
         options={{
           tabBarIcon: postsIcon,
-          title: "My Posts",
+          title: "Mes Publi",
         }}
       />
       <Tabs.Screen
         name="message"
         options={{
           tabBarIcon: messageIcon,
-          title: "Message",
+          title: "Messages",
         }}
       />
       <Tabs.Screen
@@ -72,7 +72,7 @@ export default function TabsLayout() {
         name="account"
         options={{
           tabBarIcon: personIcon,
-          title: "Account",
+          title: "Compte",
         }}
       />
     </Tabs>
