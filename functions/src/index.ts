@@ -1,47 +1,51 @@
-import * as functions from "firebase-functions/v1";
-import * as admin from "firebase-admin";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+import { getMessaging } from "firebase-admin/messaging";
 
-admin.initializeApp();
+initializeApp();
 
-export const sendNewMessageNotification = functions.firestore
-    .document("chats/{chatId}/messages/{messageId}")
-    .onCreate(async (snap: any, context: any) => {
+export const sendNewMessageNotification = onDocumentCreated(
+    "chats/{chatId}/messages/{messageId}",
+    async (event) => {
+        const snapshot = event.data;
+        if (!snapshot) return;
 
-        const msg = snap.data();
-        const senderId = msg.senderId;
-        const text = msg.text || "";
-        const chatId = context.params.chatId;
+        const messageData = snapshot.data();
+        const senderId: string = messageData.senderId;
+        const text: string = messageData.text || "Vous avez un nouveau message";
+        const chatId: string = event.params.chatId;
 
-        // Extraire participants depuis chatId
-        const [userA, userB] = chatId.split("_");
-        const receiverId = senderId === userA ? userB : userA;
+        if (!senderId) return;
 
-        // Récupérer le token du receiver
-        const receiverDoc = await admin.firestore()
-            .collection("users")
-            .doc(receiverId)
-            .get();
+        const participants = chatId.split("_");
+        if (participants.length !== 2) return;
 
-        if (!receiverDoc.exists) return null;
-        const token = receiverDoc.data()?.fcmToken;
-        if (!token) return null;
+        const receiverId = senderId === participants[0] ? participants[1] : participants[0];
+        if (receiverId === senderId) return;
 
-        // Nom de l’envoyeur (optionnel)
-        let senderName = "New message";
-        const senderDoc = await admin.firestore()
-            .collection("users")
-            .doc(senderId)
-            .get();
-        if (senderDoc.exists) senderName = senderDoc.data()?.name || senderName;
+        const userDoc = await getFirestore().collection("users").doc(receiverId).get();
+        if (!userDoc.exists) return;
 
-        // Payload notification
-        const payload = {
-            notification: {
-                title: senderName,
-                body: text.length > 40 ? text.substring(0, 40) + "..." : text
-            },
-            data: { chatId, senderId }
+        const fcmToken = userDoc.get("fcmToken") as string | undefined;
+        if (!fcmToken?.trim()) {
+            console.log("Pas de token FCM valide pour", receiverId);
+            return;
+        }
+
+        const message = {
+            token: fcmToken,
+            notification: { title: "Nouveau message", body: text },
+            data: { chatId, type: "new_message" },
+            android: { priority: "high" as const, },
+            apns: { payload: { aps: { sound: "default", badge: 1 } } },
         };
 
-        return admin.messaging().sendToDevice(token, payload);
-    });
+        try {
+            const response = await getMessaging().send(message);
+            console.log("Notification envoyée !", response);
+        } catch (error: any) {
+            console.error("Erreur FCM:", error.errorInfo?.code || error.message);
+        }
+    }
+);

@@ -239,7 +239,7 @@ function DialogScreen({ chatId, receiverId }: { chatId: string, receiverId: stri
                         <Animated.View entering={FadeInUp.delay(index * 50)} style={{
                             padding: 10,
                             alignSelf: item.senderId === auth.currentUser?.uid ? 'flex-end' : 'flex-start',
-                            backgroundColor: item.senderId === auth.currentUser?.uid ? Colors.primary : 'rgba(255, 255, 255, 0.1)',
+                            backgroundColor: item.senderId === auth.currentUser?.uid ? Colors.primary : 'rgba(107, 17, 17, 0.86)',
                             borderRadius: 10,
                             margin: 5,
                             maxWidth: '80%'

@@ -18,7 +18,9 @@ export async function registerForPushNotificationsAsync() {
 
     if (finalStatus !== "granted") return null
 
-    const tokenData = await Notifications.getExpoPushTokenAsync()
+    // Switch to Device Token for Firebase Admin SDK compatibility
+    const tokenData = await Notifications.getDevicePushTokenAsync()
+    console.log("Device Token Type:", tokenData.type);
     return tokenData.data
 }
 

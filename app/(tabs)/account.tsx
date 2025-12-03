@@ -54,9 +54,11 @@ export default function Account() {
 
 
   useEffect(() => {
+    if (!user) return;
+
     const usersColl = collection(db, "users")
 
-    const userRef = doc(usersColl, auth.currentUser?.uid)
+    const userRef = doc(usersColl, user.uid)
 
 
     const unsub = onSnapshot(userRef, (snapshot) => {
@@ -64,14 +66,14 @@ export default function Account() {
         setUserData(snapshot.data())
 
 
-        console.log(userData)
+        console.log(snapshot.data())
       }
 
     })
 
     return () => unsub()
 
-  }, [])
+  }, [user])
 
 
   const signOutFromAccount = () => {
