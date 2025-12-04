@@ -17,6 +17,7 @@ import { Spinner } from "@/components/ui/spinner";
 import Animated, { FadeInDown, Layout } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import AdMob from "@/components/ui/AdMob";
+/* import AdMob from "@/components/ui/AdMob"; */
 
 
 const { width, height } = Dimensions.get("window")

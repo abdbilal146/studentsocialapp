@@ -38,7 +38,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         "expo-router",
         "expo-font",
         "expo-notifications",
-        "expo-ads-admob",
+        "react-native-google-mobile-ads"
     ],
     notification: {
         icon: "./assets/icon.png",
