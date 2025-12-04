@@ -151,7 +151,7 @@ export default function Account() {
                     <Ionicons name="person" color={Colors.lightBlue} size={20}></Ionicons>
                   </View>
                   <Text style={styles.accountText}>
-                    Mes Amis ({userData?.friends.length})
+                    Mes Amis ({userData?.friends ? userData?.friends.length : 0})
                   </Text>
                 </HStack>
                 <Ionicons name="chevron-forward" color={Colors.lightBlue} size={20}></Ionicons>
@@ -579,7 +579,7 @@ function FriendsBody() {
   }, [auth.currentUser?.uid])
 
 
-  if (!userData || userData.length === 0) {
+  if (!userData || userData?.length === 0) {
     return (
       <View style={{ padding: 20, alignItems: 'center' }}>
         <Text style={{ color: Colors.text, fontSize: 16, opacity: 0.6 }}>Aucun ami trouvé.</Text>

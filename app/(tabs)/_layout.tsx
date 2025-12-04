@@ -49,7 +49,6 @@ export default function TabsLayout() {
         options={{
           tabBarIcon: homeIcon,
           title: "Accueil",
-
         }}
       />
       <Tabs.Screen

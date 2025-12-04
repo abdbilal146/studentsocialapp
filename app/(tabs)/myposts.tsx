@@ -61,6 +61,7 @@ export default function MyPosts() {
                 style={styles.postWrapper}
             >
                 <PostCard
+                    deleteBtnVisibility={true}
                     btnSpinner={deletePostBtnSpinner}
                     onDeletePostPress={() => { deletePostFunc(item.id) }}
                     press={() => { addToFavorite(item.id, likes) }}
@@ -73,8 +74,10 @@ export default function MyPosts() {
 
     return (
         <View style={styles.container}>
+            {/* Modern Header */}
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Mes Posts</Text>
+                <Text style={styles.headerSubtitle}>Gérez vos publications</Text>
             </View>
 
             <FlatList
@@ -103,17 +106,28 @@ const styles = StyleSheet.create({
     },
     header: {
         paddingTop: height * 0.08,
-        paddingBottom: 20,
+        paddingBottom: 16,
         paddingHorizontal: 20,
         backgroundColor: Colors.white,
-        borderBottomWidth: 1,
-        borderBottomColor: "rgba(0,0,0,0.05)",
-        zIndex: 10,
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 3,
     },
     headerTitle: {
-        fontSize: 28,
-        fontWeight: "700",
+        fontSize: 32,
+        fontWeight: "800",
         color: Colors.darkBlue,
+        letterSpacing: -0.5,
+    },
+    headerSubtitle: {
+        fontSize: 14,
+        color: Colors.text,
+        opacity: 0.6,
+        marginTop: 4,
     },
     listContent: {
         padding: 16,

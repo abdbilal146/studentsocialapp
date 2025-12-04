@@ -99,6 +99,7 @@ export default function Index() {
                 style={styles.postWrapper}
             >
                 <PostCard
+                    deleteBtnVisibility={false}
                     btnSpinner={false}
                     onDeletePostPress={() => { console.log("Delete functionality restricted on feed") }}
                     press={() => { addToFavorite(post.id, likes) }}
@@ -115,6 +116,7 @@ export default function Index() {
         <View style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Fil d'actualité</Text>
+                <Text style={styles.headerSubtitle}>Découvrez les dernières publications</Text>
             </View>
 
             <FlatList
@@ -214,11 +216,11 @@ function ModalBody() {
     )
 }
 
-export function PostCard({ content, press, likesCount, onDeletePostPress, btnSpinner }: { content: string, press: () => void, likesCount: number, onDeletePostPress: () => void, btnSpinner: boolean }) {
+export function PostCard({ content, press, likesCount, onDeletePostPress, btnSpinner, deleteBtnVisibility }: { content: string, press: () => void, likesCount: number, onDeletePostPress: () => void, btnSpinner: boolean, deleteBtnVisibility: boolean }) {
     const { openActionSheet, setBodyContent } = useActionSheet()
 
     const showDrawer = () => {
-        setBodyContent(<PostDrawerBody btnSpinner={btnSpinner} onDeletePostPress={onDeletePostPress} ></PostDrawerBody>)
+        setBodyContent(<PostDrawerBody deleteBtnVisibility={deleteBtnVisibility} btnSpinner={btnSpinner} onDeletePostPress={onDeletePostPress} ></PostDrawerBody>)
         openActionSheet()
     }
     return (
@@ -249,12 +251,14 @@ export function PostCard({ content, press, likesCount, onDeletePostPress, btnSpi
 }
 
 
-function PostDrawerBody({ onDeletePostPress, btnSpinner }: { onDeletePostPress: () => void, btnSpinner: boolean }) {
+function PostDrawerBody({ onDeletePostPress, btnSpinner, deleteBtnVisibility }: { onDeletePostPress: () => void, btnSpinner: boolean, deleteBtnVisibility: boolean }) {
     return (
         <View style={styles.postDrawerBodyContainerStyle}>
-            <Pressable style={styles.postDrawerPressableItemStyle} onPress={() => { onDeletePostPress() }}>{
-                btnSpinner ? <Spinner color={Colors.white} /> : <Text style={styles.postDrawerPressableTextStyle}>Supprimer l'annonce</Text>
-            }</Pressable>
+            {
+                deleteBtnVisibility && <Pressable style={styles.postDrawerPressableItemStyle} onPress={() => { onDeletePostPress() }}>{
+                    btnSpinner ? <Spinner color={Colors.white} /> : <Text style={styles.postDrawerPressableTextStyle}>Supprimer l'annonce</Text>
+                }</Pressable>
+            }
         </View>
     )
 }
@@ -267,17 +271,27 @@ const styles = StyleSheet.create({
     },
     header: {
         paddingTop: height * 0.08,
-        paddingBottom: 20,
+        paddingBottom: 16,
         paddingHorizontal: 20,
         backgroundColor: Colors.white,
-        borderBottomWidth: 1,
-        borderBottomColor: "rgba(0,0,0,0.05)",
-        zIndex: 10,
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 3,
     },
     headerTitle: {
-        fontSize: 28,
-        fontWeight: "700",
+        fontSize: 32,
+        fontWeight: "800",
         color: Colors.darkBlue,
+    },
+    headerSubtitle: {
+        fontSize: 14,
+        color: Colors.text,
+        opacity: 0.6,
+        marginTop: 4,
     },
     listContent: {
         padding: 16,

@@ -13,7 +13,7 @@ const { height, width } = Dimensions.get("window")
 import { Colors } from "@/constants/Colors";
 import { HStack } from "@/components/ui/hstack";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { getAllUsers, listenToUser } from "@/db/users";
+import { getAllFriends, getAllUsers, listenToUser } from "@/db/users";
 import { deleteMessage, listenToMessages, listenToUserChats, sendMessage } from "@/db/chats";
 import { useRouter } from "expo-router";
 import { useActionSheet } from "@/contexts/ActionSheetContext";
@@ -21,7 +21,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function Message() {
-    const [getUsers, setUsers] = useState<any[]>()
+    const [getFriends, setFriends] = useState<any[]>()
     const [searchKeyWord, setSearchkeyWord] = useState<string>("")
     const [filtredSearchList, setFiltredSearchList] = useState<any[]>()
     const [dialogScreenVisibility, setDialogScreenVisibility] = useState<boolean>(false)
@@ -29,12 +29,7 @@ export default function Message() {
     const [receiverId, setReceiverId] = useState<string>()
     const [messages, setMessages] = useState<any[]>()
 
-    useEffect(() => {
-        const unsubscribe = getAllUsers((usersData) => {
-            setUsers(usersData)
-        })
-        return () => unsubscribe()
-    }, [])
+
 
     useEffect(() => {
         console.log("Filtered List Updated:", filtredSearchList)
@@ -68,11 +63,19 @@ export default function Message() {
         return () => unsubscribe()
     }, [])
 
+
     const onSearch = () => {
-        const filtredUserData = getUsers?.filter((user) => {
-            return user.email.includes(searchKeyWord!)
+        if (searchKeyWord.length === 0 || !auth.currentUser?.uid) return
+
+        getAllFriends(auth.currentUser?.uid, (usersData: any[]) => {
+            const filtredUsers = usersData.filter((user) => {
+                return user.email.includes(searchKeyWord!)
+            })
+
+            setFiltredSearchList(filtredUsers)
+
         })
-        setFiltredSearchList(filtredUserData)
+
     }
 
     const deleteSearch = () => {
