@@ -24,6 +24,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     android: {
         versionCode: 2,
+        permissions: [
+            "INTERNET",
+            "WAKE_LOCK",
+            "VIBRATE",
+            "READ_MEDIA_IMAGES",
+            "READ_MEDIA_VIDEO"
+        ],
         adaptiveIcon: {
             "foregroundImage": "./assets/adaptive-icon.png",
             "backgroundColor": "#ffffff"

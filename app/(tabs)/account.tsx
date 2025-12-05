@@ -27,6 +27,7 @@ import { saveToken } from "@/notifications";
 import { Collections } from "@/constants/Collections";
 import { createUser, deleteUserDocument, getAllFriends, listenToUser, updateUser } from "@/db/users";
 import { useRouter } from "expo-router";
+import { Link, LinkText } from "@/components/ui/link";
 
 
 const { width, height } = Dimensions.get("window");
@@ -232,6 +233,10 @@ export default function Account() {
                   </Text>
                 </HStack>
               </Pressable>
+
+              <Link href="https://docs.google.com/document/d/1hCoZjChq-vLifTnjIHqtSJISwTbMvSZ7a4NzavchC54/edit?usp=sharing">
+                <LinkText style={{ color: Colors.darkBlue, fontSize: 16 }}>Politique de confidentialité</LinkText>
+              </Link>
 
             </VStack>
           </Box>
