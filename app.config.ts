@@ -54,6 +54,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
                 "androidAppId": "ca-app-pub-3940256099942544~3347511713",
                 "iosAppId": "ca-app-pub-3940256099942544~1458002511"
             }
+        ],
+        [
+            "expo-av",
+            {
+                "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
+            }
         ]
     ],
     notification: {

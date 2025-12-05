@@ -31,18 +31,31 @@ export const listenToMessages = (chatId: string, callback: (messages: any[]) => 
     });
 };
 
-export const sendMessage = async (chatId: string, userId: string, text: string) => {
+export const sendMessage = async (chatId: string, userId: string, text: string, type: string, audiourl: string, duration: number) => {
     await setDoc(doc(db, "chats", chatId), {
         lastMessage: text,
         updatedAt: serverTimestamp()
     }, { merge: true });
 
     // Add the message to the subcollections
-    await addDoc(collection(db, "chats", chatId, "messages"), {
-        text,
-        senderId: userId,
-        createdAt: serverTimestamp()
-    });
+    if (type == 'text') {
+        await addDoc(collection(db, "chats", chatId, "messages"), {
+            type,
+            text,
+            senderId: userId,
+            createdAt: serverTimestamp()
+        });
+    }
+
+    if (type == 'audio') {
+        await addDoc(collection(db, "chats", chatId, "messages"), {
+            type,
+            audiourl,
+            duration,
+            senderId: userId,
+            createdAt: serverTimestamp()
+        });
+    }
 };
 
 export const deleteMessage = async (chatId: string, messageId: string) => {

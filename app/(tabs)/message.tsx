@@ -8,6 +8,7 @@ import { DocumentData } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { StyleSheet, View, KeyboardAvoidingView, Platform, FlatList, Text, Dimensions, Pressable, BackHandler, SafeAreaView } from "react-native";
 import Animated, { FadeIn, FadeOut, SlideInRight, SlideOutRight, FadeInDown, FadeInUp } from "react-native-reanimated";
+import { Audio } from "expo-av"
 
 const { height, width } = Dimensions.get("window")
 import { Colors } from "@/constants/Colors";
@@ -18,8 +19,11 @@ import { deleteMessage, listenToMessages, listenToUserChats, sendMessage } from 
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useActionSheet } from "@/contexts/ActionSheetContext";
 import { Spinner } from "@/components/ui/spinner";
-import { Ionicons } from "@expo/vector-icons";
+import { FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { onAuthStateChanged } from "firebase/auth";
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import { Recording } from "expo-av/build/Audio";
+import { uploadAudio } from "@/storage/audio";
 
 export default function Message() {
     const [getFriends, setFriends] = useState<any[]>()
@@ -254,6 +258,7 @@ function DialogScreen({ chatId, receiverId, onBack }: { chatId: string, receiver
     const router = useRouter()
     const { openActionSheet, setBodyContent, closeActionSheet } = useActionSheet()
     const [btnSpinner, setBtnSpinner] = useState<boolean>(false)
+    const [recording, setRecording] = useState<Recording>()
 
 
 
@@ -273,13 +278,69 @@ function DialogScreen({ chatId, receiverId, onBack }: { chatId: string, receiver
         return () => unsubscribe()
     }, [])
 
+
+    const startRecording = async () => {
+        try {
+            const permission = await Audio.requestPermissionsAsync()
+
+            if (permission.status !== 'granted') return
+
+            await Audio.setAudioModeAsync({
+                allowsRecordingIOS: true,
+                playsInSilentModeIOS: true
+            })
+
+            const { recording } = await Audio.Recording.createAsync(
+                Audio.RecordingOptionsPresets.HIGH_QUALITY
+            )
+
+            setRecording(recording);
+
+
+        } catch (e) {
+            console.log(e)
+        }
+    }
+
+    const stopRecordingAndSend = async () => {
+        try {
+            await recording?.stopAndUnloadAsync()
+            const uri = recording?.getURI()
+            setRecording(undefined)
+
+            const path = `voice_messages/${chatId}/${Date.now()}.m4a`;
+
+            const audioUrl = await uploadAudio(path, uri)
+
+
+            const { sound } = await Audio.Sound.createAsync({ uri });
+            const status = await sound.getStatusAsync();
+
+            if (!status.isLoaded) {
+                console.error("Audio not loaded");
+                return;
+            }
+
+            const duration = status.durationMillis! / 1000;
+
+            const userId = auth.currentUser?.uid
+            if (!userId) return
+
+
+            await sendMessage(chatId, userId, '', 'audio', audioUrl, duration)
+
+        } catch (e) {
+            console.log(e)
+        }
+    }
+
     const onSend = async () => {
         if (text.trim().length === 0) return
         const userId = auth.currentUser?.uid
         if (!userId) return
 
         try {
-            await sendMessage(chatId, userId, text)
+            await sendMessage(chatId, userId, text, 'text', 'aud', 6)
             setText("")
         } catch (error) {
             console.error("Error sending message:", error)
@@ -426,13 +487,21 @@ function DialogScreen({ chatId, receiverId, onBack }: { chatId: string, receiver
                             </Input>
                         </FormControl>
 
-                        <Button
-                            style={styles.sendBtn}
-                            onPress={onSend}
-                            isDisabled={!text.trim()}
-                        >
-                            <ButtonIcon as={ArrowRightIcon} />
-                        </Button>
+                        {text.trim().length > 0 ? (
+                            <Button
+                                style={styles.iconButton}
+                                onPress={onSend}
+                            >
+                                <ButtonIcon as={ArrowRightIcon} color={Colors.primary} />
+                            </Button>
+                        ) : (
+                            <Button
+                                style={styles.iconButton}
+                                onPress={recording ? stopRecordingAndSend : startRecording}
+                            >
+                                <FontAwesome6 name="microphone" size={20} color={Colors.primary} />
+                            </Button>
+                        )}
                     </View>
                 </Animated.View>
             </KeyboardAvoidingView>
@@ -484,6 +553,7 @@ const MessageItem = ({ item, index, onOpenChat }: { item: any, index: number, on
                     <View style={styles.messageItemRight}>
                         <Ionicons name="chevron-forward" size={18} color={Colors.text} style={{ opacity: 0.4 }} />
                     </View>
+
                 </View>
             </Pressable>
         </Animated.View>
@@ -803,24 +873,36 @@ const styles = StyleSheet.create({
         margin: 15
     },
     inputContainer: {
-        display: "flex",
         flexDirection: "row",
-        gap: 12,
-        padding: 16,
+        alignItems: "center",
+        gap: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
         backgroundColor: Colors.primary,
         borderTopWidth: 1,
         borderTopColor: "rgba(255, 255, 255, 0.1)",
     },
     formControl: {
-        width: "85%",
+        flex: 1,
     },
     input: {
-        borderColor: Colors.primary,
-        borderRadius: 20,
+        borderWidth: 0,
+        borderRadius: 24,
         backgroundColor: Colors.white,
+        height: 48,
     },
     inputField: {
         color: Colors.black,
+        fontSize: 16,
+        paddingHorizontal: 12,
+    },
+    iconButton: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: Colors.white,
+        alignItems: "center",
+        justifyContent: "center",
     },
     renderSearchItemContainer: {
         backgroundColor: "transparent",
@@ -850,10 +932,6 @@ const styles = StyleSheet.create({
         color: Colors.black,
         fontWeight: "600"
     },
-    sendBtn: {
-        borderRadius: 20
-    },
-
 
     // message drawer
 

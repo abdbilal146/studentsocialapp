@@ -17,6 +17,7 @@ import { Spinner } from "@/components/ui/spinner";
 import Animated, { FadeInDown, Layout } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import AdMob from "@/components/ui/AdMob";
+import Fontisto from '@expo/vector-icons/Fontisto';
 
 const { width, height } = Dimensions.get("window")
 
@@ -237,12 +238,18 @@ export function PostCard({ content, press, likesCount, onDeletePostPress, btnSpi
                     <Text style={styles.postCardContentTextStyle}>{content}</Text>
                 </View>
                 <HStack style={styles.postCardActionsContainer}>
-                    <Button style={{ backgroundColor: 'transparent' }} >
-                        <ButtonIcon as={MessageCircleIcon} color={Colors.text}></ButtonIcon>
+                    <Button style={styles.actionButton} onPress={press}>
+                        <ButtonIcon as={FavouriteIcon} color={Colors.text} />
+                        <ButtonText style={styles.actionButtonText}>{likesCount}</ButtonText>
                     </Button>
-                    <Button style={{ backgroundColor: 'transparent' }} onPress={press} >
-                        <ButtonIcon as={FavouriteIcon}></ButtonIcon>
-                        <ButtonText style={styles.favouriteNumberTextStyle}>{likesCount}</ButtonText>
+
+                    <Button style={styles.actionButton}>
+                        <ButtonIcon as={MessageCircleIcon} color={Colors.text} />
+                        <ButtonText style={styles.actionButtonText}>Commenter</ButtonText>
+                    </Button>
+
+                    <Button style={styles.actionButton} onPress={() => { console.log("Hello") }}>
+                        <Fontisto name="favorite" size={18} color={Colors.text} />
                     </Button>
                 </HStack>
             </VStack>
@@ -446,14 +453,26 @@ const styles = StyleSheet.create({
     postCardActionsContainer: {
         display: "flex",
         flexDirection: "row",
-        justifyContent: "flex-end",
+        justifyContent: "space-between",
         alignItems: "center",
         width: "100%",
-        gap: 16,
         borderTopWidth: 1,
         borderTopColor: Colors.offWhite,
         paddingTop: 12,
         marginTop: 12,
+    },
+    actionButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "transparent",
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        gap: 6
+    },
+    actionButtonText: {
+        color: Colors.text,
+        fontSize: 14,
+        fontWeight: "600"
     },
     postCardTextContainer: {
         width: "100%",
