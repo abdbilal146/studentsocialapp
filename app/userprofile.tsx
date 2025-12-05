@@ -21,6 +21,7 @@ export default function UserProfile() {
     const [userInfo, setUserInfo] = useState<any>()
     const [currentUserInfo, setCurrentUserInfo] = useState<any>()
     const [userPosts, setUserPosts] = useState<any[]>()
+    const [messageBtnDisabled, setMessageBtnDisabled] = useState<boolean>(true)
     const { closeActionSheet } = useActionSheet()
 
     useEffect(() => {
@@ -52,6 +53,9 @@ export default function UserProfile() {
 
         const retrievUserData = listenToUser(auth.currentUser.uid, (data) => {
             setCurrentUserInfo(data)
+            if (data.friends.includes(params.userId as string)) {
+                setMessageBtnDisabled(false)
+            }
             console.log("currentUser:", data)
         })
 
@@ -128,7 +132,7 @@ export default function UserProfile() {
                 <Divider style={styles.divider}>
 
                 </Divider>
-                <HStack>
+                <HStack style={styles.buttonsContainer}>
                     {
                         auth?.currentUser?.uid !== params.userId && <Button onPress={async () => {
 
@@ -146,10 +150,14 @@ export default function UserProfile() {
                             }
                         }} style={styles.useProfileBtn}>
                             <ButtonText style={styles.useProfileBtnText}>
-                                {currentUserInfo?.friends?.includes(userInfo.uid) ? "Ami ( Cliquer pour retirer)" : currentUserInfo?.friendInvitationsSent?.includes(userInfo.uid) ? "Invitation envoyé" : "Ajouter comme ami"}
+                                {currentUserInfo?.friends?.includes(userInfo.uid) ? "Ami (retirer)" : currentUserInfo?.friendInvitationsSent?.includes(userInfo.uid) ? "Invitation envoyé" : "Ajouter comme ami"}
                             </ButtonText>
                         </Button>
                     }
+
+                    <Button onPress={() => { _goToMessagerie() }} disabled={messageBtnDisabled} style={messageBtnDisabled ? styles.useProfileBtnDisabled : styles.useProfileBtn}>
+                        <ButtonText>Message</ButtonText>
+                    </Button>
                 </HStack>
 
                 <Divider style={styles.divider}>
@@ -162,7 +170,7 @@ export default function UserProfile() {
 
                     {userPosts?.map(post => {
                         let likes = post.likes || []
-                        return <PostCard btnSpinner={false} onDeletePostPress={() => { deletePostFunc(post.id) }} press={() => { addToFavorite(post.id, likes) }} key={post.id} content={post.content} likesCount={likes.length}></PostCard>
+                        return <PostCard deleteBtnVisibility={false} btnSpinner={false} onDeletePostPress={() => { deletePostFunc(post.id) }} press={() => { addToFavorite(post.id, likes) }} key={post.id} content={post.content} likesCount={likes.length}></PostCard>
                     })}
 
                 </View>
@@ -209,10 +217,22 @@ const styles = StyleSheet.create({
         color: Colors.white
     },
 
+    buttonsContainer: {
+        display: "flex",
+        gap: 15
+    },
+
     useProfileBtn: {
         height: height * 0.04,
-        width: width * 0.5,
+        width: width * 0.4,
         backgroundColor: Colors.border,
+        borderRadius: 12,
+    },
+
+    useProfileBtnDisabled: {
+        height: height * 0.04,
+        width: width * 0.4,
+        backgroundColor: Colors.text,
         borderRadius: 12,
     },
 
